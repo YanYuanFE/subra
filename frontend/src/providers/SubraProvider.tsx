@@ -1,8 +1,8 @@
-import React, { createContext, useContext, ReactNode, useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAccount } from '@starknet-react/core';
-import { Account } from 'starknet';
-import { subra, SubraService } from '@/services';
+import React, { createContext, useContext, ReactNode, useEffect } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useAccount } from "@starknet-react/core";
+import { Account } from "starknet";
+import { subra, SubraService } from "@/services";
 
 // 创建SubraService的Context
 interface SubraContextType {
@@ -20,9 +20,6 @@ const queryClient = new QueryClient({
       retry: 3,
       refetchOnWindowFocus: false,
     },
-    mutations: {
-      retry: 1,
-    },
   },
 });
 
@@ -32,22 +29,22 @@ interface SubraProviderProps {
 
 export const SubraProvider: React.FC<SubraProviderProps> = ({ children }) => {
   const { account, address, status } = useAccount();
-  
+
   const contextValue: SubraContextType = {
     subraService: subra,
   };
 
   // 监听钱包连接状态，自动连接subra服务
   useEffect(() => {
-    if (account && address && status === 'connected') {
-      console.log('Wallet connected, connecting to Subra service...', address);
+    if (account && address && status === "connected") {
+      console.log("Wallet connected, connecting to Subra service...", address);
       // 将AccountInterface转换为Account类型
       const starknetAccount = account as Account;
-      subra.connectAccount(starknetAccount).catch(error => {
-        console.error('Failed to connect Subra service:', error);
+      subra.connectAccount(starknetAccount).catch((error) => {
+        console.error("Failed to connect Subra service:", error);
       });
-    } else if (status === 'disconnected') {
-      console.log('Wallet disconnected, disconnecting from Subra service...');
+    } else if (status === "disconnected") {
+      console.log("Wallet disconnected, disconnecting from Subra service...");
       subra.disconnectAccount();
     }
   }, [account, address, status]);
@@ -65,7 +62,7 @@ export const SubraProvider: React.FC<SubraProviderProps> = ({ children }) => {
 export const useSubra = (): SubraContextType => {
   const context = useContext(SubraContext);
   if (context === undefined) {
-    throw new Error('useSubra must be used within a SubraProvider');
+    throw new Error("useSubra must be used within a SubraProvider");
   }
   return context;
 };

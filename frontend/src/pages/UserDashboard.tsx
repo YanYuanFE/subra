@@ -12,6 +12,9 @@ import {
   useRenewSubscription,
   useCancelSubscription,
   useTotalPlans,
+  useAutoRenewalAuth,
+  useEnableAutoRenewal,
+  useDisableAutoRenewal,
 } from "@/hooks/useSubraQueries";
 import {
   Calendar,
@@ -23,7 +26,21 @@ import {
   Wallet,
   TrendingUp,
   Loader2,
+  Settings,
+  RotateCcw,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface UserSubscription {
   planId: string;
@@ -35,6 +52,85 @@ interface UserSubscription {
   canceledDate?: string;
   subscriptionData?: SubscriptionData;
 }
+
+// SubscriptionCard component for active subscriptions with auto renewal
+interface SubscriptionCardProps {
+  subscription: UserSubscription;
+  userAddress?: string;
+  onCancel: (planId: string) => void;
+  onAutoRenewalToggle: (planId: string, enabled: boolean) => void;
+}
+
+const SubscriptionCard = ({
+  subscription,
+  userAddress,
+  onCancel,
+  onAutoRenewalToggle,
+}: SubscriptionCardProps) => {
+  const { data: autoRenewalAuth } = useAutoRenewalAuth(
+    subscription.planId,
+    userAddress
+  );
+
+  const isAutoRenewalEnabled = autoRenewalAuth?.enabled || false;
+
+  return (
+    <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors space-y-3">
+      {/* Main subscription info */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <h3 className="font-semibold">{subscription.name}</h3>
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+            <span className="flex items-center space-x-1">
+              <DollarSign className="w-4 h-4" />
+              <span>
+                {subscription.price} {subscription.token}
+              </span>
+            </span>
+            <span className="flex items-center space-x-1">
+              <Calendar className="w-4 h-4" />
+              <span>Renews {subscription.renewalDate}</span>
+            </span>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onCancel(subscription.planId)}
+          className="hover:bg-destructive hover:text-destructive-foreground"
+        >
+          Cancel
+        </Button>
+      </div>
+
+      {/* Auto renewal section */}
+      <div className="flex items-center justify-between pt-2 border-t">
+        <div className="flex items-center space-x-2">
+          <RotateCcw className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Auto Renewal</span>
+          {isAutoRenewalEnabled && autoRenewalAuth && (
+            <Badge variant="secondary" className="text-xs">
+              {autoRenewalAuth.remainingRenewals}/{autoRenewalAuth.maxRenewals} left
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center space-x-2">
+          {isAutoRenewalEnabled && (
+            <span className="text-xs text-muted-foreground">
+              Max: {autoRenewalAuth?.maxPrice} {subscription.token}
+            </span>
+          )}
+          <Switch
+            checked={isAutoRenewalEnabled}
+            onCheckedChange={(checked) =>
+              onAutoRenewalToggle(subscription.planId, checked)
+            }
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const UserDashboard = () => {
   const { address: userAddress, status: connectionStatus } = useAccount();
@@ -49,19 +145,29 @@ const UserDashboard = () => {
   const subscribeMutation = useSubscribe();
   const renewMutation = useRenewSubscription();
   const cancelMutation = useCancelSubscription();
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      message: "Your subscription to Netflix Pro has been renewed",
-      type: "success",
-    },
-    {
-      id: 2,
-      message:
-        "Payment failed for Spotify Premium - Please update payment method",
-      type: "error",
-    },
-  ]);
+  const enableAutoRenewalMutation = useEnableAutoRenewal();
+  const disableAutoRenewalMutation = useDisableAutoRenewal();
+
+  // Auto renewal settings state
+  const [autoRenewalSettings, setAutoRenewalSettings] = useState<{
+    planId: string;
+    maxRenewals: number;
+    maxPrice: string;
+  } | null>(null);
+  const [isAutoRenewalDialogOpen, setIsAutoRenewalDialogOpen] = useState(false);
+  // const [notifications, setNotifications] = useState([
+  //   {
+  //     id: 1,
+  //     message: "Your subscription to Netflix Pro has been renewed",
+  //     type: "success",
+  //   },
+  //   {
+  //     id: 2,
+  //     message:
+  //       "Payment failed for Spotify Premium - Please update payment method",
+  //     type: "error",
+  //   },
+  // ]);
 
   const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
 
@@ -80,8 +186,59 @@ const UserDashboard = () => {
     0
   );
 
-  const dismissNotification = (id: number) => {
-    setNotifications(notifications.filter((n) => n.id !== id));
+  // const dismissNotification = (id: number) => {
+  //   setNotifications(notifications.filter((n) => n.id !== id));
+  // };
+
+  // Auto renewal handlers
+  const handleAutoRenewalToggle = async (planId: string, enabled: boolean) => {
+    if (!userAddress) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (enabled) {
+      // Find the subscription to get its current price
+      const subscription = subscriptions.find(sub => sub.planId === planId);
+      const currentPrice = subscription ? parseFloat(subscription.price) : 100;
+      // Set default max price to 1.5x current price to allow for price increases
+      const defaultMaxPrice = Math.ceil(currentPrice * 1.5).toString();
+      
+      // Open settings dialog for enabling auto renewal
+      setAutoRenewalSettings({
+        planId,
+        maxRenewals: 12, // Default to 12 renewals
+        maxPrice: defaultMaxPrice, // Default max price based on current price
+      });
+      setIsAutoRenewalDialogOpen(true);
+    } else {
+      // Disable auto renewal directly
+      try {
+        await disableAutoRenewalMutation.mutateAsync(planId);
+        toast.success("Auto renewal disabled successfully");
+      } catch (error) {
+        console.error("Failed to disable auto renewal:", error);
+        toast.error("Failed to disable auto renewal");
+      }
+    }
+  };
+
+  const handleEnableAutoRenewal = async () => {
+    if (!autoRenewalSettings || !userAddress) return;
+
+    try {
+      await enableAutoRenewalMutation.mutateAsync({
+        planId: autoRenewalSettings.planId,
+        maxRenewals: autoRenewalSettings.maxRenewals,
+        maxPrice: autoRenewalSettings.maxPrice,
+      });
+      toast.success("Auto renewal enabled successfully");
+      setIsAutoRenewalDialogOpen(false);
+      setAutoRenewalSettings(null);
+    } catch (error) {
+      console.error("Failed to enable auto renewal:", error);
+      toast.error("Failed to enable auto renewal");
+    }
   };
 
   const handleCancel = async (planId: string) => {
@@ -215,7 +372,7 @@ const UserDashboard = () => {
       </div>
 
       {/* Notifications */}
-      {notifications.length > 0 && (
+      {/* {notifications.length > 0 && (
         <div className="space-y-3">
           {notifications.map((notification) => (
             <Alert
@@ -245,35 +402,7 @@ const UserDashboard = () => {
             </Alert>
           ))}
         </div>
-      )}
-
-      {/* Profile Section */}
-      <Card className="animate-slide-up">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Wallet className="w-5 h-5" />
-            <span>Wallet Profile</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">
-                Connected Wallet
-              </p>
-              <p className="font-mono text-sm bg-muted px-3 py-2 rounded">
-                {userAddress
-                  ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`
-                  : "Not connected"}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Balance</p>
-              <p className="font-semibold">1,245.67 USDC • 0.85 ETH</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      )} */}
 
       {/* Active Subscriptions */}
       <Card className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
@@ -301,34 +430,13 @@ const UserDashboard = () => {
           ) : (
             <div className="grid gap-4">
               {activeSubscriptions.map((subscription) => (
-                <div
+                <SubscriptionCard
                   key={subscription.planId}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{subscription.name}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                      <span className="flex items-center space-x-1">
-                        <DollarSign className="w-4 h-4" />
-                        <span>
-                          {subscription.price} {subscription.token}
-                        </span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>Renews {subscription.renewalDate}</span>
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCancel(subscription.planId)}
-                    className="hover:bg-destructive hover:text-destructive-foreground"
-                  >
-                    Cancel
-                  </Button>
-                </div>
+                  subscription={subscription}
+                  userAddress={userAddress}
+                  onCancel={handleCancel}
+                  onAutoRenewalToggle={handleAutoRenewalToggle}
+                />
               ))}
             </div>
           )}
@@ -433,6 +541,94 @@ const UserDashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Auto Renewal Settings Dialog */}
+      <Dialog open={isAutoRenewalDialogOpen} onOpenChange={setIsAutoRenewalDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Auto Renewal Settings</DialogTitle>
+            <DialogDescription>
+              Configure automatic renewal settings for your subscription.
+            </DialogDescription>
+          </DialogHeader>
+          {autoRenewalSettings && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="maxRenewals" className="text-right">
+                  Max Renewals
+                </Label>
+                <Input
+                  id="maxRenewals"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={autoRenewalSettings.maxRenewals}
+                  onChange={(e) =>
+                    setAutoRenewalSettings({
+                      ...autoRenewalSettings,
+                      maxRenewals: parseInt(e.target.value) || 1,
+                    })
+                  }
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="maxPrice" className="text-right">
+                  Max Price
+                </Label>
+                <Input
+                  id="maxPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={autoRenewalSettings.maxPrice}
+                  onChange={(e) =>
+                    setAutoRenewalSettings({
+                      ...autoRenewalSettings,
+                      maxPrice: e.target.value,
+                    })
+                  }
+                  className="col-span-3"
+                  placeholder="Maximum price per renewal"
+                />
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  • Auto renewal will stop after {autoRenewalSettings.maxRenewals} renewals
+                </p>
+                <p>
+                  • Renewal will be skipped if price exceeds {autoRenewalSettings.maxPrice}
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAutoRenewalDialogOpen(false);
+                setAutoRenewalSettings(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEnableAutoRenewal}
+              disabled={enableAutoRenewalMutation.isPending}
+              className="bg-gradient-primary hover:shadow-glow"
+            >
+              {enableAutoRenewalMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Enabling...
+                </>
+              ) : (
+                "Enable Auto Renewal"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

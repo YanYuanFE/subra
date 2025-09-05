@@ -14,6 +14,7 @@ export const QUERY_KEYS = {
   NETWORK_STATUS: "networkStatus",
   TOKEN_METADATA: "tokenMetadata",
   TOKEN_SYMBOL: "tokenSymbol",
+  AUTO_RENEWAL_AUTH: "autoRenewalAuth",
 } as const;
 
 // 获取总计划数
@@ -23,7 +24,6 @@ export const useTotalPlans = () => {
   return useQuery({
     queryKey: [QUERY_KEYS.TOTAL_PLANS],
     queryFn: () => subraService.getTotalPlans(),
-    staleTime: 30 * 1000, // 30秒
   });
 };
 
@@ -35,7 +35,6 @@ export const useUserPlanIds = (userAddress?: string) => {
     queryKey: [QUERY_KEYS.USER_PLANS, userAddress],
     queryFn: () => subraService.getUserPlans(userAddress!),
     enabled: !!userAddress,
-    staleTime: 60 * 1000, // 1分钟
   });
 };
 
@@ -64,7 +63,6 @@ export const useUserPlans = (userAddress?: string) => {
     },
     enabled:
       !!userAddress && !!planIds && planIds.length > 0 && !planIdsLoading,
-    staleTime: 60 * 1000, // 1分钟
   });
 };
 
@@ -102,7 +100,6 @@ export const useUserPlansRevenue = (userAddress?: string) => {
       };
     },
     enabled: !!userAddress && !!userPlansData && !userPlansLoading,
-    staleTime: 60 * 1000, // 1分钟
   });
 };
 
@@ -114,7 +111,6 @@ export const usePlanDetails = (planId?: string) => {
     queryKey: [QUERY_KEYS.PLAN_DETAILS, planId],
     queryFn: () => subraService.getPlan(planId!),
     enabled: !!planId,
-    staleTime: 5 * 60 * 1000, // 5分钟
   });
 };
 
@@ -126,7 +122,6 @@ export const useUserSubscriptions = (userAddress?: string) => {
     queryKey: [QUERY_KEYS.USER_SUBSCRIPTIONS, userAddress],
     queryFn: () => subraService.getUserSubscriptions(userAddress!),
     enabled: !!userAddress,
-    staleTime: 30 * 1000, // 30秒
   });
 };
 
@@ -138,7 +133,6 @@ export const useUserSubscriptionIds = (userAddress?: string) => {
     queryKey: [QUERY_KEYS.USER_SUBSCRIPTIONS, userAddress],
     queryFn: () => subraService.getUserSubscriptionIds(userAddress!),
     enabled: !!userAddress,
-    staleTime: 60 * 1000, // 1分钟
   });
 };
 
@@ -150,7 +144,6 @@ export const useUserSubscriptionCount = (userAddress?: string) => {
     queryKey: [QUERY_KEYS.USER_SUBSCRIPTION_COUNT, userAddress],
     queryFn: () => subraService.getUserSubscriptionCount(userAddress!),
     enabled: !!userAddress,
-    staleTime: 30 * 1000, // 30秒
   });
 };
 
@@ -165,7 +158,6 @@ export const useSubscriptionStatus = (
     queryKey: [QUERY_KEYS.SUBSCRIPTION_STATUS, planId, userAddress],
     queryFn: () => subraService.isSubscriptionActive(planId!, userAddress!),
     enabled: !!planId && !!userAddress,
-    staleTime: 10 * 1000, // 10秒
   });
 };
 
@@ -176,7 +168,6 @@ export const useNetworkStatus = () => {
   return useQuery({
     queryKey: [QUERY_KEYS.NETWORK_STATUS],
     queryFn: () => subraService.getNetworkStatus(),
-    staleTime: 60 * 1000, // 1分钟
     refetchInterval: 30 * 1000, // 每30秒自动刷新
   });
 };
@@ -372,8 +363,6 @@ export const useTokenMetadata = (tokenAddress?: string) => {
     queryKey: [QUERY_KEYS.TOKEN_METADATA, tokenAddress],
     queryFn: () => erc20Service.getTokenMetadata(tokenAddress!),
     enabled: !!tokenAddress,
-    staleTime: 5 * 60 * 1000, // 5 minutes - token metadata rarely changes
-    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
@@ -385,8 +374,6 @@ export const useTokenSymbol = (tokenAddress?: string) => {
     queryKey: [QUERY_KEYS.TOKEN_SYMBOL, tokenAddress],
     queryFn: () => erc20Service.getTokenSymbol(tokenAddress!),
     enabled: !!tokenAddress,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
@@ -410,7 +397,95 @@ export const useTokenSymbols = (tokenAddresses: string[]) => {
       return symbolMap;
     },
     enabled: tokenAddresses.length > 0,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+// ==================== Auto Renewal Hooks ====================
+
+/**
+ * Get auto renewal authorization for a user's subscription
+ */
+export const useAutoRenewalAuth = (
+  planId?: string,
+  userAddress?: string
+) => {
+  const { subraService } = useSubra();
+
+  return useQuery({
+    queryKey: [QUERY_KEYS.AUTO_RENEWAL_AUTH, planId, userAddress],
+    queryFn: () => subraService.getAutoRenewalAuth(planId!, userAddress!),
+    enabled: !!planId && !!userAddress,
+  });
+};
+
+/**
+ * Enable auto renewal for a subscription
+ */
+export const useEnableAutoRenewal = () => {
+  const { subraService } = useSubra();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      planId,
+      maxRenewals,
+      maxPrice,
+    }: {
+      planId: string;
+      maxRenewals: number;
+      maxPrice: string;
+    }) => {
+      const result = await subraService.enableAutoRenewal(
+        planId,
+        maxRenewals,
+        maxPrice
+      );
+      if (!result.success) {
+        throw new Error(
+          result.message || result.error || "Enable auto renewal failed"
+        );
+      }
+      return result;
+    },
+    onSuccess: (_, variables) => {
+      // 刷新自动续费授权查询
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.AUTO_RENEWAL_AUTH, variables.planId],
+      });
+      // 刷新用户订阅查询
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.USER_SUBSCRIPTIONS],
+      });
+    },
+  });
+};
+
+/**
+ * Disable auto renewal for a subscription
+ */
+export const useDisableAutoRenewal = () => {
+  const { subraService } = useSubra();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (planId: string) => {
+      const result = await subraService.disableAutoRenewal(planId);
+      if (!result.success) {
+        throw new Error(
+          result.message || result.error || "Disable auto renewal failed"
+        );
+      }
+      return result;
+    },
+    onSuccess: (_, planId) => {
+      // 刷新自动续费授权查询
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.AUTO_RENEWAL_AUTH, planId],
+      });
+      // 刷新用户订阅查询
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.USER_SUBSCRIPTIONS],
+      });
+    },
   });
 };

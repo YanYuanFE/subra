@@ -8,6 +8,7 @@ import {
 } from "./types";
 import { subscriptionAbi } from "./abis";
 import { ERC20Service } from "./erc20";
+import { formatUnits } from "viem";
 
 /**
  * Subscription contract service for managing individual subscriptions
@@ -199,7 +200,9 @@ export class SubscriptionService extends BaseContractService {
 
       if (result.success) {
         // Wait for transaction confirmation
-        const confirmed = await this.waitForTransaction(result.transactionHash!);
+        const confirmed = await this.waitForTransaction(
+          result.transactionHash!
+        );
         if (!confirmed) {
           return {
             success: false,
@@ -285,7 +288,9 @@ export class SubscriptionService extends BaseContractService {
 
       if (result.success) {
         // Wait for transaction confirmation
-        const confirmed = await this.waitForTransaction(result.transactionHash!);
+        const confirmed = await this.waitForTransaction(
+          result.transactionHash!
+        );
         if (!confirmed) {
           return {
             success: false,
@@ -358,17 +363,56 @@ export class SubscriptionService extends BaseContractService {
     maxPrice: string
   ): Promise<TransactionResult> {
     try {
-      if (!this.subscriptionContract) {
+      if (!this.subscriptionContract || !this.account) {
         await this.initializeContract();
       }
 
-      const callData = CallData.compile({
-        max_renewals: maxRenewals,
-        max_price: num.toBigInt(maxPrice),
-      });
+      // Get plan info to obtain token address and decimals
+      const planInfo = await this.getPlanInfo();
+      if (!planInfo) {
+        throw new Error("Plan info not available");
+      }
 
-      const { transaction_hash } =
-        await this.subscriptionContract.enable_auto_renewal(callData);
+      // Get token decimals for proper precision conversion
+      const erc20Service = new ERC20Service();
+      await erc20Service.connectAccount(this.account!);
+      const tokenDecimals = await erc20Service.getTokenDecimals(planInfo.token);
+      if (tokenDecimals === null) {
+        throw new Error(`Failed to get decimals for token: ${planInfo.token}`);
+      }
+
+      // Convert maxPrice from human-readable format to token units
+      // For example: if maxPrice is "1.5" and decimals is 18, result will be "1500000000000000000"
+      const maxPriceInTokenUnits = num.toBigInt(
+        parseFloat(maxPrice) * Math.pow(10, tokenDecimals)
+      );
+
+      // Calculate total approval amount (max_price * max_renewals)
+      const totalApprovalAmount =
+        maxPriceInTokenUnits * num.toBigInt(maxRenewals);
+
+      // Prepare multicall: approve + enable_auto_renewal
+      const calls = [
+        {
+          contractAddress: planInfo.token,
+          entrypoint: "approve",
+          calldata: CallData.compile([
+            this.contractAddress, // spender
+            cairo.uint256(totalApprovalAmount), // amount as u256
+          ]),
+        },
+        {
+          contractAddress: this.contractAddress,
+          entrypoint: "enable_auto_renewal",
+          calldata: CallData.compile([
+            maxRenewals, // max_renewals as u32
+            cairo.uint256(maxPriceInTokenUnits), // max_price as u256
+          ]),
+        },
+      ];
+
+      // Execute multicall
+      const { transaction_hash } = await this.account!.execute(calls);
 
       // Wait for transaction confirmation
       const confirmed = await this.waitForTransaction(transaction_hash);
@@ -561,13 +605,30 @@ export class SubscriptionService extends BaseContractService {
       const result = await this.subscriptionContract.get_auto_renewal_auth(
         userAddress
       );
+      console.log(result, "result");
+
+      // Get plan info to obtain token address and decimals for price formatting
+      const planInfo = await this.getPlanInfo();
+      let formattedMaxPrice = result.max_price.toString();
+      
+      if (planInfo) {
+        // Get token decimals for proper price formatting
+        const erc20Service = new ERC20Service();
+        await erc20Service.connectAccount(this.account!);
+        const tokenDecimals = await erc20Service.getTokenDecimals(planInfo.token);
+        
+        if (tokenDecimals !== null) {
+          // Format maxPrice from token units to human-readable format
+          formattedMaxPrice = formatUnits(result.max_price, tokenDecimals);
+        }
+      }
 
       return {
-        enabled: result.enabled,
-        isEnabled: result.enabled,
+        enabled: result.is_enabled,
+        isEnabled: result.is_enabled,
         maxRenewals: Number(result.max_renewals),
         remainingRenewals: Number(result.remaining_renewals),
-        maxPrice: result.max_price.toString(),
+        maxPrice: formattedMaxPrice,
         authorizedAt: Number(result.authorized_at),
       };
     } catch (error) {

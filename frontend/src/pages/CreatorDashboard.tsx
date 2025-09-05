@@ -581,6 +581,12 @@ const CreatorDashboard = () => {
                           {Math.floor(item.plan.periodLength / 86400)} days
                         </span>
                       </span>
+                      <Badge
+                        variant={item.plan.isActive ? "default" : "destructive"}
+                        className="text-xs"
+                      >
+                        {item.plan.isActive ? "Active" : "Inactive"}
+                      </Badge>
                     </div>
                   </div>
                   <div className="flex space-x-2">
@@ -624,7 +630,7 @@ const CreatorDashboard = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center p-3 bg-muted/50 rounded-lg">
                     <p className="text-2xl font-bold text-primary">
                       {item.plan.totalSubscribers || 0}
@@ -646,14 +652,6 @@ const CreatorDashboard = () => {
                     <p className="text-xs text-muted-foreground">
                       Per Subscriber
                     </p>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <Badge
-                      variant={item.plan.isActive ? "default" : "outline"}
-                      className="text-xs"
-                    >
-                      {item.plan.isActive ? "Active" : "Inactive"}
-                    </Badge>
                   </div>
                 </div>
               </div>
