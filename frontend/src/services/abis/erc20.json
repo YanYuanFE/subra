@@ -1,0 +1,644 @@
+[
+  {
+    "name": "LockingContract",
+    "type": "impl",
+    "interface_name": "src::mintable_lock_interface::ILockingContract"
+  },
+  {
+    "name": "src::mintable_lock_interface::ILockingContract",
+    "type": "interface",
+    "items": [
+      {
+        "name": "set_locking_contract",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "locking_contract",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "get_locking_contract",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "LockAndDelegate",
+    "type": "impl",
+    "interface_name": "src::mintable_lock_interface::ILockAndDelegate"
+  },
+  {
+    "name": "core::integer::u256",
+    "type": "struct",
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "name": "src::mintable_lock_interface::ILockAndDelegate",
+    "type": "interface",
+    "items": [
+      {
+        "name": "lock_and_delegate",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "delegatee",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "lock_and_delegate_by_sig",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "delegatee",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          },
+          {
+            "name": "nonce",
+            "type": "core::felt252"
+          },
+          {
+            "name": "expiry",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "signature",
+            "type": "core::array::Array::<core::felt252>"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "MintableToken",
+    "type": "impl",
+    "interface_name": "src::mintable_token_interface::IMintableToken"
+  },
+  {
+    "name": "src::mintable_token_interface::IMintableToken",
+    "type": "interface",
+    "items": [
+      {
+        "name": "permissioned_mint",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "permissioned_burn",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "MintableTokenCamelImpl",
+    "type": "impl",
+    "interface_name": "src::mintable_token_interface::IMintableTokenCamel"
+  },
+  {
+    "name": "src::mintable_token_interface::IMintableTokenCamel",
+    "type": "interface",
+    "items": [
+      {
+        "name": "permissionedMint",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "permissionedBurn",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "Replaceable",
+    "type": "impl",
+    "interface_name": "src::replaceability_interface::IReplaceable"
+  },
+  {
+    "name": "core::array::Span::<core::felt252>",
+    "type": "struct",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "name": "src::replaceability_interface::EICData",
+    "type": "struct",
+    "members": [
+      {
+        "name": "eic_hash",
+        "type": "core::starknet::class_hash::ClassHash"
+      },
+      {
+        "name": "eic_init_data",
+        "type": "core::array::Span::<core::felt252>"
+      }
+    ]
+  },
+  {
+    "name": "core::option::Option::<src::replaceability_interface::EICData>",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "Some",
+        "type": "src::replaceability_interface::EICData"
+      },
+      {
+        "name": "None",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "name": "core::bool",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  {
+    "name": "src::replaceability_interface::ImplementationData",
+    "type": "struct",
+    "members": [
+      {
+        "name": "impl_hash",
+        "type": "core::starknet::class_hash::ClassHash"
+      },
+      {
+        "name": "eic_data",
+        "type": "core::option::Option::<src::replaceability_interface::EICData>"
+      },
+      {
+        "name": "final",
+        "type": "core::bool"
+      }
+    ]
+  },
+  {
+    "name": "src::replaceability_interface::IReplaceable",
+    "type": "interface",
+    "items": [
+      {
+        "name": "get_upgrade_delay",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u64"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_impl_activation_time",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "implementation_data",
+            "type": "src::replaceability_interface::ImplementationData"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u64"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "add_new_implementation",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "implementation_data",
+            "type": "src::replaceability_interface::ImplementationData"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "remove_implementation",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "implementation_data",
+            "type": "src::replaceability_interface::ImplementationData"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "replace_to",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "implementation_data",
+            "type": "src::replaceability_interface::ImplementationData"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "AccessControlImplExternal",
+    "type": "impl",
+    "interface_name": "src::access_control_interface::IAccessControl"
+  },
+  {
+    "name": "src::access_control_interface::IAccessControl",
+    "type": "interface",
+    "items": [
+      {
+        "name": "has_role",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          },
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_role_admin",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "RolesImpl",
+    "type": "impl",
+    "interface_name": "src::roles_interface::IMinimalRoles"
+  },
+  {
+    "name": "src::roles_interface::IMinimalRoles",
+    "type": "interface",
+    "items": [
+      {
+        "name": "is_governance_admin",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "is_upgrade_governor",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "register_governance_admin",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "remove_governance_admin",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "register_upgrade_governor",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "remove_upgrade_governor",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "renounce",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "role",
+            "type": "core::felt252"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      }
+    ]
+  },
+  {
+    "name": "ERC20Impl",
+    "type": "impl",
+    "interface_name": "openzeppelin::token::erc20::interface::IERC20"
+  },
+  {
+    "name": "openzeppelin::token::erc20::interface::IERC20",
+    "type": "interface",
+    "items": [
+      {
+        "name": "name",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "symbol",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::felt252"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "decimals",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u8"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "total_supply",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "balance_of",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "account",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "allowance",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "spender",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u256"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "transfer",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "recipient",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "name": "transfer_from",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "sender",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "recipient",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "name": "approve",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "spender",
+            "type": "core::starknet::contract_address::ContractAddress"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u256"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::bool"
+          }
+        ],
+        "state_mutability": "external"
+      }
+    ]
+  }
+]
