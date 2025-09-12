@@ -14,7 +14,7 @@ import {
 import { toast } from "sonner";
 
 export const ConnectButton = () => {
-  const { address } = useAccount();
+  const { address, ...user } = useAccount();
   const { disconnect } = useDisconnect();
 
   const { connect, connectors } = useConnect();
@@ -50,7 +50,9 @@ export const ConnectButton = () => {
         <Card className="px-3 py-2 bg-success/10 border-success/20 cursor-pointer hover:bg-success/15 transition-colors">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-success rounded-full"></div>
-            <span className="text-sm font-medium">{shortenAddress(address)}</span>
+            <span className="text-sm font-medium">
+              {shortenAddress(address)}
+            </span>
           </div>
         </Card>
       </DropdownMenuTrigger>
@@ -60,7 +62,10 @@ export const ConnectButton = () => {
           Copy Address
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => disconnect()} className="cursor-pointer text-destructive focus:text-destructive">
+        <DropdownMenuItem
+          onClick={() => disconnect()}
+          className="cursor-pointer text-destructive focus:text-destructive"
+        >
           <LogOut className="w-4 h-4 mr-2" />
           Disconnect
         </DropdownMenuItem>

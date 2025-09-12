@@ -17,7 +17,8 @@ export class SubscriptionFactoryService extends BaseContractService {
   private factoryContract: Contract | null = null;
   private factoryAddress: string;
 
-  constructor(network: string = "sepolia") {
+  constructor(network: string = "mainnet") {
+    console.log("network", network);
     super(network);
     this.factoryAddress = this.getContractAddress("subscriptionFactory");
   }
@@ -130,9 +131,9 @@ export class SubscriptionFactoryService extends BaseContractService {
       const tokenAddress = `0x${result.token.toString(16)}`;
       const rawPrice = result.price.toString();
 
-   // Get token metadata for display
-        const erc20Service = createERC20Service(getNetworkName(this.network));
-        const tokenMetadata = await erc20Service.getTokenMetadata(tokenAddress);
+      // Get token metadata for display
+      const erc20Service = createERC20Service(getNetworkName(this.network));
+      const tokenMetadata = await erc20Service.getTokenMetadata(tokenAddress);
 
       // Calculate display price (convert from token units to human-readable format)
       let displayPrice = rawPrice;
@@ -211,7 +212,9 @@ export class SubscriptionFactoryService extends BaseContractService {
         await this.initializeContract();
       }
 
-      const result = await this.factoryContract.get_user_subscriptions(userAddress);
+      const result = await this.factoryContract.get_user_subscriptions(
+        userAddress
+      );
       return result.map((planId: bigint) => planId.toString());
     } catch (error) {
       console.error("Error getting user subscriptions:", error);
@@ -228,7 +231,9 @@ export class SubscriptionFactoryService extends BaseContractService {
         await this.initializeContract();
       }
 
-      const result = await this.factoryContract.get_user_subscription_count(userAddress);
+      const result = await this.factoryContract.get_user_subscription_count(
+        userAddress
+      );
       return Number(result);
     } catch (error) {
       console.error("Error getting user subscription count:", error);

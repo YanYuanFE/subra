@@ -19,7 +19,7 @@ export class SubraService {
   private subscriptionServices: Map<string, SubscriptionService> = new Map();
   private network: string;
 
-  constructor(network: string = "sepolia") {
+  constructor(network: string = "mainnet") {
     this.network = network;
     this.factoryService = new SubscriptionFactoryService(network);
   }

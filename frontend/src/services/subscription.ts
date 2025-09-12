@@ -17,7 +17,7 @@ export class SubscriptionService extends BaseContractService {
   private subscriptionContract: Contract | null = null;
   private contractAddress: string;
 
-  constructor(contractAddress: string, network: string = "sepolia") {
+  constructor(contractAddress: string, network: string = "mainnet") {
     super(network);
     this.contractAddress = contractAddress;
   }

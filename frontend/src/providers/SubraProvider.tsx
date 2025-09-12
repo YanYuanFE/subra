@@ -31,6 +31,7 @@ export const SubraProvider: React.FC<SubraProviderProps> = ({ children }) => {
   const { account, address, status } = useAccount();
   const { chain } = useNetwork();
 
+  console.log(chain, "chain");
   const subra = new SubraService(chain.network);
 
   const contextValue: SubraContextType = {

@@ -1,7 +1,7 @@
-'use client';
-import React from 'react';
+"use client";
+import React from "react";
 
-import { Chain, mainnet, sepolia } from '@starknet-react/chains';
+import { Chain, mainnet, sepolia } from "@starknet-react/chains";
 import {
   StarknetConfig,
   argent,
@@ -9,9 +9,9 @@ import {
   useInjectedConnectors,
   voyager,
   InjectedConnector,
-  jsonRpcProvider
-} from '@starknet-react/core';
-import { NETWORKS } from '@/services';
+  jsonRpcProvider,
+} from "@starknet-react/core";
+import { NETWORKS } from "@/services";
 
 export function StarknetProvider({ children }: { children: React.ReactNode }) {
   const { connectors } = useInjectedConnectors({
@@ -20,18 +20,18 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
       argent(),
       braavos(),
       new InjectedConnector({
-        options: { id: 'okxwallet' }
-      })
+        options: { id: "okxwallet" },
+      }),
     ],
     // Hide recommended connectors if the user has any connector installed.
-    includeRecommended: 'onlyIfNoConnectors',
+    includeRecommended: "onlyIfNoConnectors",
     // Randomize the order of the connectors.
-    order: 'random'
+    order: "random",
   });
 
   return (
     <StarknetConfig
-      chains={[sepolia, mainnet]}
+      chains={[mainnet, sepolia]}
       connectors={connectors}
       explorer={voyager}
       autoConnect
@@ -44,7 +44,7 @@ export function StarknetProvider({ children }: { children: React.ReactNode }) {
             default:
               return { nodeUrl: NETWORKS.sepolia.rpcUrl };
           }
-        }
+        },
       })}
     >
       {children}
