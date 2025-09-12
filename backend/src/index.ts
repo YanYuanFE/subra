@@ -12,6 +12,8 @@ const RPC_URL = NETWORKS[network].rpcUrl;
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
 const KEEPER_ADDRESS = process.env.ACCOUNT_ADDRESS || "";
 const POLL_INTERVAL = Number(60_000); // 1分钟一次
+
+console.log(KEEPER_ADDRESS, "keeper");
 // let lastScannedBlock = 1888403;
 let lastScannedBlock = 2128618;
 const FACTORY_ADDRESS = NETWORKS[network].contracts.subscriptionFactory;
