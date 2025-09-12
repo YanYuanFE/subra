@@ -1,8 +1,8 @@
 import React, { createContext, useContext, ReactNode, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useAccount } from "@starknet-react/core";
+import { useAccount, useNetwork } from "@starknet-react/core";
 import { Account } from "starknet";
-import { subra, SubraService } from "@/services";
+import { SubraService } from "@/services";
 
 // 创建SubraService的Context
 interface SubraContextType {
@@ -29,6 +29,9 @@ interface SubraProviderProps {
 
 export const SubraProvider: React.FC<SubraProviderProps> = ({ children }) => {
   const { account, address, status } = useAccount();
+  const { chain } = useNetwork();
+
+  const subra = new SubraService(chain.network);
 
   const contextValue: SubraContextType = {
     subraService: subra,

@@ -324,15 +324,13 @@ export class SubraService {
     const planIds = await this.getUserSubscriptionIds(userAddress);
     const results = [];
 
-    console.log(planIds, "plans");
-
     for (const planId of planIds) {
       try {
         const plan = await this.getPlan(planId);
         if (!plan) continue;
 
         const subscription = await this.getSubscription(planId, userAddress);
-        const isActive = await this.isSubscriptionActive(planId, userAddress);
+        const isActive = subscription?.isActive || false;
 
         results.push({
           planId,
@@ -381,6 +379,3 @@ export class SubraService {
     return results;
   }
 }
-
-// 导出单例实例
-export const subra = new SubraService();

@@ -7,7 +7,7 @@ import {
   AutoRenewalAuth,
 } from "./types";
 import { subscriptionAbi } from "./abis";
-import { ERC20Service } from "./erc20";
+import { createERC20Service, getNetworkName } from "./erc20";
 import { formatUnits } from "viem";
 
 /**
@@ -77,7 +77,7 @@ export class SubscriptionService extends BaseContractService {
         throw new Error("Plan info not available");
       }
 
-      const erc20Service = new ERC20Service();
+      const erc20Service = createERC20Service(getNetworkName(this.network));
       await erc20Service.connectAccount(this.account!);
 
       // Check balance only (allowance will be handled by multicall)
@@ -120,7 +120,7 @@ export class SubscriptionService extends BaseContractService {
         throw new Error("Plan info not available");
       }
 
-      const erc20Service = new ERC20Service();
+      const erc20Service = createERC20Service(getNetworkName(this.network));
       await erc20Service.connectAccount(this.account!);
 
       const approveAmount = amount || planInfo.price;
@@ -374,7 +374,7 @@ export class SubscriptionService extends BaseContractService {
       }
 
       // Get token decimals for proper precision conversion
-      const erc20Service = new ERC20Service();
+      const erc20Service = createERC20Service(getNetworkName(this.network));
       await erc20Service.connectAccount(this.account!);
       const tokenDecimals = await erc20Service.getTokenDecimals(planInfo.token);
       if (tokenDecimals === null) {
@@ -513,6 +513,7 @@ export class SubscriptionService extends BaseContractService {
       }
 
       const result = await this.subscriptionContract.is_active(userAddress);
+
       return result;
     } catch (error) {
       console.error("Error checking subscription status:", error);
@@ -610,13 +611,15 @@ export class SubscriptionService extends BaseContractService {
       // Get plan info to obtain token address and decimals for price formatting
       const planInfo = await this.getPlanInfo();
       let formattedMaxPrice = result.max_price.toString();
-      
+
       if (planInfo) {
         // Get token decimals for proper price formatting
-        const erc20Service = new ERC20Service();
+        const erc20Service = createERC20Service(getNetworkName(this.network));
         await erc20Service.connectAccount(this.account!);
-        const tokenDecimals = await erc20Service.getTokenDecimals(planInfo.token);
-        
+        const tokenDecimals = await erc20Service.getTokenDecimals(
+          planInfo.token
+        );
+
         if (tokenDecimals !== null) {
           // Format maxPrice from token units to human-readable format
           formattedMaxPrice = formatUnits(result.max_price, tokenDecimals);

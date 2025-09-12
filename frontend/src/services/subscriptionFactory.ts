@@ -7,7 +7,7 @@ import {
   FactoryInfo,
 } from "./types";
 import { subscriptionFactoryAbi } from "./abis";
-import { erc20Service } from "./erc20";
+import { createERC20Service, getNetworkName } from "./erc20";
 import { formatUnits } from "viem";
 
 /**
@@ -69,6 +69,7 @@ export class SubscriptionFactoryService extends BaseContractService {
       }
 
       // Get token decimals to convert price correctly
+      const erc20Service = createERC20Service(getNetworkName(this.network));
       const decimals = await erc20Service.getTokenDecimals(token);
       console.log("decimals", decimals);
       if (decimals === null) {
@@ -129,8 +130,9 @@ export class SubscriptionFactoryService extends BaseContractService {
       const tokenAddress = `0x${result.token.toString(16)}`;
       const rawPrice = result.price.toString();
 
-      // Get token metadata
-      const tokenMetadata = await erc20Service.getTokenMetadata(tokenAddress);
+   // Get token metadata for display
+        const erc20Service = createERC20Service(getNetworkName(this.network));
+        const tokenMetadata = await erc20Service.getTokenMetadata(tokenAddress);
 
       // Calculate display price (convert from token units to human-readable format)
       let displayPrice = rawPrice;

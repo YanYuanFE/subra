@@ -1,9 +1,9 @@
 /**
- * Subra 订阅平台合约配置
+ * 网络配置文件
+ * 从前端 services/config.ts 复制的网络和合约配置
  */
 
 export interface NetworkConfig {
-  network: string;
   name: string;
   rpcUrl: string;
   explorerUrl: string;
@@ -18,7 +18,6 @@ export interface NetworkConfig {
 
 export const NETWORKS: Record<string, NetworkConfig> = {
   sepolia: {
-    network: "sepolia",
     name: "Starknet Sepolia Testnet",
     rpcUrl: "https://starknet-sepolia.public.blastapi.io/rpc/v0_8",
     explorerUrl: "https://sepolia.starkscan.co",
@@ -35,7 +34,6 @@ export const NETWORKS: Record<string, NetworkConfig> = {
       "0x05c755ba1828c70314349c4c4ddaf310e648d5773f9bb6c4eb6ce2369288569",
   },
   mainnet: {
-    network: "mainnet",
     name: "Starknet Mainnet",
     rpcUrl: "https://starknet-mainnet.public.blastapi.io/rpc/v0_8",
     explorerUrl: "https://starkscan.co",
@@ -48,21 +46,13 @@ export const NETWORKS: Record<string, NetworkConfig> = {
         "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
     },
     feeRate: 100,
-    feeRecipient:
-      "0x05c755ba1828c70314349c4c4ddaf310e648d5773f9bb6c4eb6ce2369288569",
+    feeRecipient: "",
   },
 };
 
 // 默认网络
 export const DEFAULT_NETWORK = "sepolia";
 
-// 合约 ABI 路径
-export const CONTRACT_ABIS = {
-  subscription: "./src/services/abis/subscription.json",
-  subscriptionFactory: "./src/services/abis/subscriptionFactory.json",
-};
-
-// 订阅平台常量配置
 // 代币地址映射
 export const TOKEN_ADDRESSES: Record<string, Record<string, string>> = {
   sepolia: {

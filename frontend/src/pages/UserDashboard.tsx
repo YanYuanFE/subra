@@ -48,8 +48,8 @@ interface UserSubscription {
   price: string;
   token: string;
   renewalDate: string;
-  status: "active" | "upcoming" | "canceled";
-  canceledDate?: string;
+  status: "active" | "upcoming" | "expired";
+  expiredDate?: string;
   subscriptionData?: SubscriptionData;
 }
 
@@ -110,7 +110,8 @@ const SubscriptionCard = ({
           <span className="text-sm font-medium">Auto Renewal</span>
           {isAutoRenewalEnabled && autoRenewalAuth && (
             <Badge variant="secondary" className="text-xs">
-              {autoRenewalAuth.remainingRenewals}/{autoRenewalAuth.maxRenewals} left
+              {autoRenewalAuth.remainingRenewals}/{autoRenewalAuth.maxRenewals}{" "}
+              left
             </Badge>
           )}
         </div>
@@ -155,19 +156,6 @@ const UserDashboard = () => {
     maxPrice: string;
   } | null>(null);
   const [isAutoRenewalDialogOpen, setIsAutoRenewalDialogOpen] = useState(false);
-  // const [notifications, setNotifications] = useState([
-  //   {
-  //     id: 1,
-  //     message: "Your subscription to Netflix Pro has been renewed",
-  //     type: "success",
-  //   },
-  //   {
-  //     id: 2,
-  //     message:
-  //       "Payment failed for Spotify Premium - Please update payment method",
-  //     type: "error",
-  //   },
-  // ]);
 
   const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
 
@@ -177,8 +165,8 @@ const UserDashboard = () => {
   const upcomingRenewals = subscriptions.filter(
     (sub) => sub.status === "upcoming"
   );
-  const canceledSubscriptions = subscriptions.filter(
-    (sub) => sub.status === "canceled"
+  const expiredSubscriptions = subscriptions.filter(
+    (sub) => sub.status === "expired"
   );
 
   const totalMonthlySpend = activeSubscriptions.reduce(
@@ -199,11 +187,11 @@ const UserDashboard = () => {
 
     if (enabled) {
       // Find the subscription to get its current price
-      const subscription = subscriptions.find(sub => sub.planId === planId);
+      const subscription = subscriptions.find((sub) => sub.planId === planId);
       const currentPrice = subscription ? parseFloat(subscription.price) : 100;
       // Set default max price to 1.5x current price to allow for price increases
       const defaultMaxPrice = Math.ceil(currentPrice * 1.5).toString();
-      
+
       // Open settings dialog for enabling auto renewal
       setAutoRenewalSettings({
         planId,
@@ -258,8 +246,8 @@ const UserDashboard = () => {
           sub.planId === planId
             ? {
                 ...sub,
-                status: "canceled" as const,
-                canceledDate: new Date().toISOString().split("T")[0],
+                status: "expired" as const,
+                expiredDate: new Date().toISOString().split("T")[0],
               }
             : sub
         )
@@ -306,41 +294,60 @@ const UserDashboard = () => {
   useEffect(() => {
     if (userSubscriptions && userSubscriptions.length > 0) {
       // 转换数据格式以匹配现有的UI结构
-      const formattedSubscriptions = userSubscriptions.map((sub) => {
-        const endTime = sub.subscription?.endTime || 0;
-        const currentTime = Math.floor(Date.now() / 1000);
-        const isExpiringSoon =
-          endTime > 0 && endTime - currentTime < 7 * 24 * 60 * 60; // 7天内到期
+      const formattedSubscriptions = userSubscriptions
+        .map((sub) => {
+          const endTime = sub.subscription?.endTime || 0;
+          const currentTime = Math.floor(Date.now() / 1000);
+          const isExpiringSoon =
+            endTime > 0 && endTime - currentTime < 7 * 24 * 60 * 60; // 7天内到期
 
-        let status: "active" | "upcoming" | "canceled" = "canceled";
-        if (sub.isActive) {
-          status = isExpiringSoon ? "upcoming" : "active";
-        }
-
-        return {
-          planId: sub.planId,
-          name: sub.plan.name || `Plan ${sub.planId}`,
-          price: sub.plan.displayPrice || sub.plan.price,
-          token: sub.plan.tokenSymbol || "USDC",
-          renewalDate:
+          let status: "active" | "upcoming" | "expired" = "expired";
+          if (sub.subscription?.isActive) {
+            // 如果订阅活跃且还没到期，根据是否即将到期来判断状态
+            if (endTime > currentTime) {
+              status = isExpiringSoon ? "upcoming" : "active";
+            } else {
+              // 活跃但已过期，这种情况理论上不应该发生，但标记为过期
+              status = "expired";
+            }
+          } else if (
+            sub.subscription &&
+            !sub.subscription.isActive &&
             endTime > 0
-              ? new Date(endTime * 1000).toISOString().split("T")[0]
-              : "2024-09-15",
-          status,
-          canceledDate:
-            !sub.isActive && sub.subscription
-              ? new Date(sub.subscription.endTime * 1000)
-                  .toISOString()
-                  .split("T")[0]
-              : undefined,
-          subscriptionData: sub.subscription || {
-            startTime: 0,
-            endTime: 0,
-            isActive: false,
-            renewalsCount: 0,
-          },
-        };
-      });
+          ) {
+            // 有订阅数据但不活跃，说明是过期的
+            status = "expired";
+          } else {
+            // 没有订阅数据或其他情况，跳过这个订阅
+            return null;
+          }
+
+          return {
+            planId: sub.planId,
+            name: sub.plan.name || `Plan ${sub.planId}`,
+            price: sub.plan.displayPrice || sub.plan.price,
+            token: sub.plan.tokenSymbol || "USDC",
+            renewalDate:
+              endTime > 0
+                ? new Date(endTime * 1000).toISOString().split("T")[0]
+                : "2024-09-15",
+            status,
+            expiredDate:
+              status === "expired" && sub.subscription
+                ? new Date(sub.subscription.endTime * 1000)
+                    .toISOString()
+                    .split("T")[0]
+                : undefined,
+            subscriptionData: sub.subscription || {
+              startTime: 0,
+              endTime: 0,
+              isActive: false,
+              renewalsCount: 0,
+            },
+          };
+        })
+        .filter(Boolean); // 过滤掉null值
+      console.log(formattedSubscriptions, "ff");
       setSubscriptions(formattedSubscriptions as UserSubscription[]);
     } else {
       // 如果没有订阅数据，设置为空数组
@@ -358,7 +365,7 @@ const UserDashboard = () => {
             Manage your decentralized subscriptions
           </p>
         </div>
-        <Card className="p-4 bg-gradient-primary text-primary-foreground">
+        {/* <Card className="p-4 bg-gradient-primary text-primary-foreground">
           <div className="flex items-center space-x-2">
             <TrendingUp className="w-5 h-5" />
             <div>
@@ -368,7 +375,7 @@ const UserDashboard = () => {
               </p>
             </div>
           </div>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Notifications */}
@@ -497,22 +504,22 @@ const UserDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Canceled Subscriptions */}
+      {/* Expired Subscriptions */}
       <Card className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Canceled Subscriptions</span>
-            <Badge variant="outline">{canceledSubscriptions.length}</Badge>
+            <span>Expired Subscriptions</span>
+            <Badge variant="outline">{expiredSubscriptions.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {canceledSubscriptions.length === 0 ? (
+          {expiredSubscriptions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p>No canceled subscriptions</p>
+              <p>No expired subscriptions</p>
             </div>
           ) : (
             <div className="grid gap-4">
-              {canceledSubscriptions.map((subscription) => (
+              {expiredSubscriptions.map((subscription) => (
                 <div
                   key={subscription.planId}
                   className="flex items-center justify-between p-4 border rounded-lg opacity-60"
@@ -528,13 +535,28 @@ const UserDashboard = () => {
                       </span>
                       <span className="flex items-center space-x-1">
                         <X className="w-4 h-4" />
-                        <span>Canceled {subscription.canceledDate}</span>
+                        <span>Expired {subscription.expiredDate}</span>
                       </span>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-muted-foreground">
-                    Canceled
-                  </Badge>
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleRenew(subscription.planId)}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Renew
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        handleAutoRenewalToggle(subscription.planId, true)
+                      }
+                    >
+                      Auto Renew
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -543,7 +565,10 @@ const UserDashboard = () => {
       </Card>
 
       {/* Auto Renewal Settings Dialog */}
-      <Dialog open={isAutoRenewalDialogOpen} onOpenChange={setIsAutoRenewalDialogOpen}>
+      <Dialog
+        open={isAutoRenewalDialogOpen}
+        onOpenChange={setIsAutoRenewalDialogOpen}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Auto Renewal Settings</DialogTitle>
@@ -594,10 +619,12 @@ const UserDashboard = () => {
               </div>
               <div className="text-sm text-muted-foreground">
                 <p>
-                  • Auto renewal will stop after {autoRenewalSettings.maxRenewals} renewals
+                  • Auto renewal will stop after{" "}
+                  {autoRenewalSettings.maxRenewals} renewals
                 </p>
                 <p>
-                  • Renewal will be skipped if price exceeds {autoRenewalSettings.maxPrice}
+                  • Renewal will be skipped if price exceeds{" "}
+                  {autoRenewalSettings.maxPrice}
                 </p>
               </div>
             </div>

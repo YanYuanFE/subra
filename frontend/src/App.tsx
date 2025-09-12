@@ -7,7 +7,6 @@ import Landing from "./pages/Landing";
 import UserDashboard from "./pages/UserDashboard";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import SubscriptionPage from "./pages/SubscriptionPage";
-import SubscriptionTest from "./pages/SubscriptionTest";
 import NotFound from "./pages/NotFound";
 import { StarknetProvider } from "./components/StarkProvider";
 import { SubraProvider } from "./providers/SubraProvider";

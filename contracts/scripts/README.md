@@ -48,7 +48,8 @@ export ACCOUNT_NAME="my-deployer"
 # 设置必需的环境变量
 export INITIAL_OWNER="0x05c755ba1828c70314349ec4c4ddaf310e648d5773f9bb6c4eb6ce2369288569"
 export FEE_RECIPIENT="0x05c755ba1828c70314349ec4c4ddaf310e648d5773f9bb6c4eb6ce2369288569"
-export ACCOUNT_NAME="new_account"
+export ACCOUNT_NAME="mainnet_deployer"
+export NETWORK="mainnet" 
 
 # 运行部署脚本
 ./scripts/deploy.sh

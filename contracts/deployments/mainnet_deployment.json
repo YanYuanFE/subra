@@ -1,0 +1,19 @@
+{
+  "network": "mainnet",
+  "rpc_url": "",
+  "deployed_at": "2025-09-11T14:10:16Z",
+  "contracts": {
+    "Subscription": {
+      "class_hash": "0x0689831680b275ba57e8bca5247269a4199f420ac0e80c249c4a54b3cac6f94f"
+    },
+    "SubscriptionFactory": {
+      "address": "0x071cef4b22646bb4c0dca1079195fcfdc425fff7b572e7558cb94c5be7e27e91",
+      "constructor_args": {
+        "subscription_class_hash": "0x0689831680b275ba57e8bca5247269a4199f420ac0e80c249c4a54b3cac6f94f",
+        "initial_owner": "0x05c755ba1828c70314349ec4c4ddaf310e648d5773f9bb6c4eb6ce2369288569",
+        "fee_rate": "100",
+        "fee_recipient": "0x05c755ba1828c70314349ec4c4ddaf310e648d5773f9bb6c4eb6ce2369288569"
+      }
+    }
+  }
+}

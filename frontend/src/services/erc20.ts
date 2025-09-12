@@ -225,5 +225,13 @@ export class ERC20Service extends BaseContractService {
   }
 }
 
-// Export singleton instance
+// Helper function to get network name from config
+export const getNetworkName = (networkConfig: any): string => {
+  return networkConfig?.network || "sepolia";
+};
+
+// Export factory function to create service with network
+export const createERC20Service = (network?: string) => new ERC20Service(network);
+
+// Export default singleton instance (sepolia)
 export const erc20Service = new ERC20Service();

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAccount } from "@starknet-react/core";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -25,6 +26,7 @@ import {
   useSubscriptionStatus,
   useSubscribe,
   useTokenSymbol,
+  QUERY_KEYS,
 } from "@/hooks/useSubraQueries";
 import { toast } from "sonner";
 
@@ -32,6 +34,7 @@ const SubscriptionPage: React.FC = () => {
   const { planId } = useParams<{ planId: string }>();
   const navigate = useNavigate();
   const { account, address } = useAccount();
+  const queryClient = useQueryClient();
   const [isSubscribing, setIsSubscribing] = useState(false);
 
   // 获取计划详情
@@ -65,6 +68,12 @@ const SubscriptionPage: React.FC = () => {
     setIsSubscribing(true);
     try {
       await subscribeMutation.mutateAsync({ planId, userAddress: address });
+
+      // 手动刷新订阅状态查询以确保UI立即更新
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.SUBSCRIPTION_STATUS, planId, address],
+      });
+
       toast.success("You have successfully subscribed to this plan", {
         description: "Subscription Successful",
       });
@@ -87,9 +96,12 @@ const SubscriptionPage: React.FC = () => {
         description: "Link Copied",
       });
     } catch (error) {
-      toast.error("Unable to copy link, please manually copy the URL from address bar", {
-        description: "Copy Failed",
-      });
+      toast.error(
+        "Unable to copy link, please manually copy the URL from address bar",
+        {
+          description: "Copy Failed",
+        }
+      );
     }
   };
 
@@ -233,7 +245,7 @@ const SubscriptionPage: React.FC = () => {
               <>
                 {isSubscribed ? (
                   <Alert>
-                    <CheckCircle className="h-4 w-4" />
+                    <CheckCircle className="h-4 w-4 stroke-success" />
                     <AlertDescription>
                       You have already subscribed to this plan
                     </AlertDescription>

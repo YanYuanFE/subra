@@ -1,13 +1,10 @@
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Wallet, User, Settings, CreditCard, Plus } from "lucide-react";
+import { CreditCard, Plus } from "lucide-react";
 import { ConnectButton } from "./connect-button";
+import { NetworkIndicator } from "./network-indicator";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
-  const [walletConnected, setWalletConnected] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -22,10 +19,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               to="/"
               className="flex items-center space-x-2 transition-opacity hover:opacity-80"
             >
-              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-xl font-bold text-primary-foreground">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                {/* <span className="text-xl font-bold text-primary-foreground">
                   S
-                </span>
+                </span> */}
+                <img src="/logo.png" alt="" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground">Subra</h1>
@@ -61,8 +59,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </Link>
             </nav>
 
-            {/* Wallet */}
+            {/* Network & Wallet */}
             <div className="flex items-center space-x-3">
+              <NetworkIndicator />
               <ConnectButton />
             </div>
           </div>

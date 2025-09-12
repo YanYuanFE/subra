@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSubra } from "@/providers/SubraProvider";
+import { useNetwork } from "@starknet-react/core";
 import { SubscriptionPlan, SubscriptionData } from "@/services/types";
-import { erc20Service, TokenMetadata } from "@/services/erc20";
+import { createERC20Service, getNetworkName, TokenMetadata } from "@/services/erc20";
+import { NETWORKS } from "@/services/config";
 
 // Query Keys
 export const QUERY_KEYS = {
@@ -213,6 +215,7 @@ export const useCreatePlan = () => {
 export const useSubscribe = () => {
   const { subraService } = useSubra();
   const queryClient = useQueryClient();
+  console.log(subraService, "sub");
 
   return useMutation({
     mutationFn: async (params: { planId: string; userAddress: string }) => {
@@ -359,10 +362,16 @@ export const useDeactivatePlan = () => {
  * Get token metadata (name, symbol, decimals)
  */
 export const useTokenMetadata = (tokenAddress?: string) => {
+  const { chain } = useNetwork();
+  
   return useQuery({
-    queryKey: [QUERY_KEYS.TOKEN_METADATA, tokenAddress],
-    queryFn: () => erc20Service.getTokenMetadata(tokenAddress!),
-    enabled: !!tokenAddress,
+    queryKey: [QUERY_KEYS.TOKEN_METADATA, tokenAddress, chain?.network],
+    queryFn: () => {
+      const networkConfig = NETWORKS[chain?.network || "sepolia"];
+      const erc20Service = createERC20Service(getNetworkName(networkConfig));
+      return erc20Service.getTokenMetadata(tokenAddress!);
+    },
+    enabled: !!tokenAddress && !!chain,
   });
 };
 
@@ -370,10 +379,16 @@ export const useTokenMetadata = (tokenAddress?: string) => {
  * Get token symbol only (optimized for UI display)
  */
 export const useTokenSymbol = (tokenAddress?: string) => {
+  const { chain } = useNetwork();
+  
   return useQuery({
-    queryKey: [QUERY_KEYS.TOKEN_SYMBOL, tokenAddress],
-    queryFn: () => erc20Service.getTokenSymbol(tokenAddress!),
-    enabled: !!tokenAddress,
+    queryKey: [QUERY_KEYS.TOKEN_SYMBOL, tokenAddress, chain?.network],
+    queryFn: () => {
+      const networkConfig = NETWORKS[chain?.network || "sepolia"];
+      const erc20Service = createERC20Service(getNetworkName(networkConfig));
+      return erc20Service.getTokenSymbol(tokenAddress!);
+    },
+    enabled: !!tokenAddress && !!chain,
   });
 };
 
@@ -381,9 +396,14 @@ export const useTokenSymbol = (tokenAddress?: string) => {
  * Get multiple token symbols at once
  */
 export const useTokenSymbols = (tokenAddresses: string[]) => {
+  const { chain } = useNetwork();
+  
   return useQuery({
-    queryKey: [QUERY_KEYS.TOKEN_SYMBOL, "batch", tokenAddresses],
+    queryKey: [QUERY_KEYS.TOKEN_SYMBOL, "batch", tokenAddresses, chain?.network],
     queryFn: async () => {
+      const networkConfig = NETWORKS[chain?.network || "sepolia"];
+      const erc20Service = createERC20Service(getNetworkName(networkConfig));
+      
       const symbols = await Promise.all(
         tokenAddresses.map((address) => erc20Service.getTokenSymbol(address))
       );
@@ -396,7 +416,7 @@ export const useTokenSymbols = (tokenAddresses: string[]) => {
 
       return symbolMap;
     },
-    enabled: tokenAddresses.length > 0,
+    enabled: tokenAddresses.length > 0 && !!chain,
   });
 };
 
@@ -405,10 +425,7 @@ export const useTokenSymbols = (tokenAddresses: string[]) => {
 /**
  * Get auto renewal authorization for a user's subscription
  */
-export const useAutoRenewalAuth = (
-  planId?: string,
-  userAddress?: string
-) => {
+export const useAutoRenewalAuth = (planId?: string, userAddress?: string) => {
   const { subraService } = useSubra();
 
   return useQuery({

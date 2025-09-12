@@ -2,13 +2,13 @@
  * Subra Services - Contract interaction services for the Subra subscription platform
  */
 
-export { BaseContractService } from './base';
-export { SubscriptionFactoryService } from './subscriptionFactory';
-export { SubscriptionService } from './subscription';
-export { SubraService, subra } from './subra';
-export * from './types';
-export * from './config';
-export * from './abis';
+export { BaseContractService } from "./base";
+export { SubscriptionFactoryService } from "./subscriptionFactory";
+export { SubscriptionService } from "./subscription";
+export { SubraService } from "./subra";
+export * from "./types";
+export * from "./config";
+export * from "./abis";
 
 // Re-export commonly used types for convenience
 export type {
@@ -23,8 +23,8 @@ export type {
   RenewedEvent,
   AutoRenewalEnabledEvent,
   AutoRenewalExecutedEvent,
-  PlanCreatedEvent
-} from './types';
+  PlanCreatedEvent,
+} from "./types";
 
 // Utility functions
 export const isValidStarknetAddress = (address: string): boolean => {
@@ -34,7 +34,7 @@ export const isValidStarknetAddress = (address: string): boolean => {
 
 export const formatStarknetAddress = (address: string): string => {
   // Ensure address starts with 0x and is properly formatted
-  if (!address.startsWith('0x')) {
+  if (!address.startsWith("0x")) {
     return `0x${address}`;
   }
   return address.toLowerCase();
@@ -46,5 +46,5 @@ export const SUBRA_CONSTANTS = {
   MIN_PERIOD_LENGTH: 86400, // 1 day in seconds
   MAX_PERIOD_LENGTH: 31536000, // 1 year in seconds
   DEFAULT_TIMEOUT: 30000, // 30 seconds
-  RETRY_ATTEMPTS: 3
+  RETRY_ATTEMPTS: 3,
 } as const;

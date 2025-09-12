@@ -37,14 +37,12 @@ import {
   Eye,
   Loader2,
 } from "lucide-react";
-import { useAccount } from "@starknet-react/core";
+import { useAccount, useNetwork } from "@starknet-react/core";
 
 // Using SubscriptionPlan from services/types.ts
 
 const CreatorDashboard = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -78,7 +76,8 @@ const CreatorDashboard = () => {
     isLoading: revenueLoading,
     error: revenueError,
   } = useUserPlansRevenue(address);
-  const { data: networkStatus, error: networkError } = useNetworkStatus();
+  const { chain } = useNetwork();
+  const currentNetwork = TOKEN_ADDRESSES[chain.network];
   const createPlanMutation = useCreatePlan();
   const reactivatePlanMutation = useReactivatePlan();
   const deactivatePlanMutation = useDeactivatePlan();
@@ -94,13 +93,11 @@ const CreatorDashboard = () => {
     userPlansLoading ||
     revenueLoading ||
     tokenSymbolsLoading;
-  const hasQueryError =
-    totalPlansError || userPlansError || revenueError || networkError;
+  const hasQueryError = totalPlansError || userPlansError || revenueError;
   const queryErrorMessage =
     totalPlansError?.message ||
     userPlansError?.message ||
-    revenueError?.message ||
-    networkError?.message;
+    revenueError?.message;
 
   // 格式化token显示
   const formatTokenDisplay = (tokenAddress: string) => {
@@ -226,7 +223,6 @@ const CreatorDashboard = () => {
         period: parseInt(formData.period), // Convert period to seconds
       });
 
-      setShowSuccess(true);
       setShowCreateForm(false);
       resetForm();
 
@@ -301,7 +297,6 @@ const CreatorDashboard = () => {
         <Button
           onClick={() => {
             setShowCreateForm(true);
-            setShowSuccess(false);
             resetForm();
           }}
           className="bg-gradient-primary hover:shadow-glow transition-all duration-300"
@@ -372,41 +367,13 @@ const CreatorDashboard = () => {
                 <BarChart3 className="w-6 h-6 text-success-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Active Plans</p>
+                <p className="text-sm text-muted-foreground">Total Plans</p>
                 <p className="text-2xl font-bold">{userPlans.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Success Message */}
-      {showSuccess && (
-        <Alert className="border-success/50 bg-success/10 animate-fade-in">
-          <CheckCircle className="h-4 w-4 text-success" />
-          <AlertDescription>
-            <div className="space-y-2">
-              <p className="font-medium">
-                Subscription plan created successfully!
-              </p>
-              <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleShare("new-plan")}
-                  className="bg-gradient-primary"
-                >
-                  <Share className="w-4 h-4 mr-2" />
-                  Share Link
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Embed Code
-                </Button>
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Create Form */}
       {showCreateForm && (
@@ -445,15 +412,9 @@ const CreatorDashboard = () => {
                       <SelectValue placeholder="Select token" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={TOKEN_ADDRESSES[DEFAULT_NETWORK].USDC}>
-                        USDC
-                      </SelectItem>
-                      <SelectItem value={TOKEN_ADDRESSES[DEFAULT_NETWORK].ETH}>
-                        ETH
-                      </SelectItem>
-                      <SelectItem value={TOKEN_ADDRESSES[DEFAULT_NETWORK].STRK}>
-                        STRK
-                      </SelectItem>
+                      <SelectItem value={currentNetwork.USDC}>USDC</SelectItem>
+                      <SelectItem value={currentNetwork.ETH}>ETH</SelectItem>
+                      <SelectItem value={currentNetwork.STRK}>STRK</SelectItem>
                     </SelectContent>
                   </Select>
                   {formErrors.token && (
