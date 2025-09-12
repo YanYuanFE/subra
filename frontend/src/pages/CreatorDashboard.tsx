@@ -596,7 +596,9 @@ const CreatorDashboard = () => {
                     <p className="text-2xl font-bold text-primary">
                       {item.plan.totalSubscribers || 0}
                     </p>
-                    <p className="text-xs text-muted-foreground">Subscribers</p>
+                    <p className="text-xs text-muted-foreground">
+                      Current Subscribers
+                    </p>
                   </div>
                   <div className="text-center p-3 bg-muted/50 rounded-lg">
                     <p className="text-2xl font-bold text-success">

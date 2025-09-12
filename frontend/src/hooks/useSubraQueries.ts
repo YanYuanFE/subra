@@ -5,6 +5,39 @@ import { SubscriptionPlan, SubscriptionData } from "@/services/types";
 import { createERC20Service, getNetworkName, TokenMetadata } from "@/services/erc20";
 import { NETWORKS } from "@/services/config";
 
+// Token price types
+interface TokenPrice {
+  [key: string]: {
+    usd: number;
+  };
+}
+
+// Token symbol to CoinGecko ID mapping
+const TOKEN_ID_MAP: { [symbol: string]: string } = {
+  'BTC': 'bitcoin',
+  'ETH': 'ethereum',
+  'USDC': 'usd-coin',
+  'USDT': 'tether',
+  'STRK': 'starknet',
+  // Add more mappings as needed
+};
+
+// Fetch token prices from CoinGecko
+const fetchTokenPrices = async (symbols: string[]): Promise<TokenPrice> => {
+  const ids = symbols.map(symbol => TOKEN_ID_MAP[symbol.toUpperCase()]).filter(Boolean);
+  if (ids.length === 0) return {};
+  
+  const response = await fetch(
+    `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`
+  );
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch token prices');
+  }
+  
+  return response.json();
+};
+
 // Query Keys
 export const QUERY_KEYS = {
   TOTAL_PLANS: "totalPlans",
@@ -16,6 +49,7 @@ export const QUERY_KEYS = {
   NETWORK_STATUS: "networkStatus",
   TOKEN_METADATA: "tokenMetadata",
   TOKEN_SYMBOL: "tokenSymbol",
+  TOKEN_PRICES: "tokenPrices",
   AUTO_RENEWAL_AUTH: "autoRenewalAuth",
 } as const;
 
@@ -73,9 +107,16 @@ export const useUserPlansRevenue = (userAddress?: string) => {
   const { subraService } = useSubra();
   const { data: userPlansData, isLoading: userPlansLoading } =
     useUserPlans(userAddress);
+  
+  // 获取所有计划的token symbols
+  const tokenSymbols = userPlansData?.map(item => item.plan.tokenSymbol).filter(Boolean) || [];
+  const uniqueSymbols = [...new Set(tokenSymbols)];
+  
+  // 获取token价格
+  const { data: tokenPrices, isLoading: pricesLoading } = useTokenPrices(uniqueSymbols);
 
   return useQuery({
-    queryKey: [QUERY_KEYS.USER_PLANS, "revenue", userAddress],
+    queryKey: [QUERY_KEYS.USER_PLANS, "revenue", userAddress, tokenPrices],
     queryFn: async () => {
       if (!userPlansData || userPlansData.length === 0) {
         return { totalRevenue: 0, averageRevenue: 0, totalSubscribers: 0 };
@@ -87,9 +128,26 @@ export const useUserPlansRevenue = (userAddress?: string) => {
       // 计算每个计划的收入
       for (const item of userPlansData) {
         const subscribers = item.plan.totalSubscribers || 0;
-
+        const tokenAmount = parseFloat(item.plan.totalRevenue) || 0;
+        const tokenSymbol = item.plan.tokenSymbol;
+        
         totalSubscribers += subscribers;
-        totalRevenue += parseFloat(item.plan.totalRevenue) || 0;
+        
+        // 如果有价格数据，计算USD价值
+        if (tokenSymbol && tokenPrices) {
+          const tokenId = TOKEN_ID_MAP[tokenSymbol.toUpperCase()];
+          const tokenPrice = tokenId ? tokenPrices[tokenId]?.usd : undefined;
+          
+          if (tokenPrice) {
+            totalRevenue += tokenAmount * tokenPrice;
+          } else {
+            // 如果没有价格数据，使用原始token数量
+            totalRevenue += tokenAmount;
+          }
+        } else {
+          // 如果没有symbol或价格数据，使用原始token数量
+          totalRevenue += tokenAmount;
+        }
       }
 
       const averageRevenue =
@@ -101,7 +159,7 @@ export const useUserPlansRevenue = (userAddress?: string) => {
         totalSubscribers,
       };
     },
-    enabled: !!userAddress && !!userPlansData && !userPlansLoading,
+    enabled: !!userAddress && !!userPlansData && !userPlansLoading && !pricesLoading,
   });
 };
 
@@ -417,6 +475,19 @@ export const useTokenSymbols = (tokenAddresses: string[]) => {
       return symbolMap;
     },
     enabled: tokenAddresses.length > 0 && !!chain,
+  });
+};
+
+/**
+ * Get token prices from CoinGecko
+ */
+export const useTokenPrices = (symbols: string[]) => {
+  return useQuery({
+    queryKey: [QUERY_KEYS.TOKEN_PRICES, symbols],
+    queryFn: () => fetchTokenPrices(symbols),
+    enabled: symbols.length > 0,
+    staleTime: 2 * 60 * 1000, // 2分钟缓存
+    refetchInterval: 5 * 60 * 1000, // 5分钟自动刷新
   });
 };
 
