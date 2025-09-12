@@ -54,7 +54,7 @@ export const NETWORKS: Record<string, NetworkConfig> = {
 };
 
 // 默认网络
-export const DEFAULT_NETWORK = "sepolia";
+export const DEFAULT_NETWORK = "mainnet";
 
 // 合约 ABI 路径
 export const CONTRACT_ABIS = {
