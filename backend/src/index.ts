@@ -1,7 +1,7 @@
 import { Account, Contract, RpcProvider, selector, num } from "starknet";
 import * as dotenv from "dotenv";
-import { NETWORKS } from "./config/networks";
-import { subscriptionFactoryAbi, subscriptionAbi } from "./abis";
+import { NETWORKS } from "./config/networks.js";
+import { subscriptionFactoryAbi, subscriptionAbi } from "./abis/index.js";
 
 dotenv.config();
 
@@ -203,9 +203,8 @@ async function keeperService() {
 }
 
 // Entry
-if (require.main === module) {
-  keeperService().catch((err) => {
-    console.error("Fatal error:", err);
-    process.exit(1);
-  });
-}
+// Start the keeper service
+keeperService().catch((err) => {
+  console.error("Fatal error:", err);
+  process.exit(1);
+});
